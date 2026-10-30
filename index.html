@@ -40,9 +40,9 @@
         <button class="carousel-btn prev" data-track="track-head">‹</button>
         <div class="carousel-track" id="track-head">
           <!-- Skeleton loading -->
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
         </div>
         <button class="carousel-btn next" data-track="track-head">›</button>
       </div>
@@ -50,8 +50,8 @@
 
     <div class="section-gap"></div>
 
-    <!-- Tronco -->
-    <section class="carousel-section">
+    <!-- Tronco con sistema de capas -->
+    <section class="carousel-section" id="section-torso">
       <div class="carousel-header">
         <div class="carousel-label">
           <span class="cat-icon">👕</span>
@@ -59,34 +59,59 @@
           <span class="cat-count" id="count-torso"></span>
         </div>
       </div>
+
+      <!-- Selector de capas para el tronco -->
+      <div class="torso-layer-tabs" id="torso-layer-tabs" role="tablist" aria-label="Capas del tronco">
+        <button class="torso-layer-tab active" data-layer="base" role="tab" aria-selected="true" title="Camiseta, camisa, top o vestido">
+          <span>👕 Base</span>
+          <span class="tab-badge" id="badge-tab-base"></span>
+        </button>
+        <button class="torso-layer-tab" data-layer="jacket" role="tab" aria-selected="false" title="Chaqueta, blazer, jersey o sudadera">
+          <span>🧥 Chaqueta</span>
+          <span class="tab-badge" id="badge-tab-jacket"></span>
+        </button>
+        <button class="torso-layer-tab" data-layer="coat" role="tab" aria-selected="false" title="Abrigo o gabardina">
+          <span>🧥 Abrigo</span>
+          <span class="tab-badge" id="badge-tab-coat"></span>
+        </button>
+        <button class="torso-layer-tab" data-layer="bag" role="tab" aria-selected="false" title="Bolso, mochila o accesorio">
+          <span>👜 Bolso</span>
+          <span class="tab-badge" id="badge-tab-bag"></span>
+        </button>
+      </div>
+
       <div class="carousel-outer">
         <button class="carousel-btn prev" data-track="track-torso">‹</button>
         <div class="carousel-track" id="track-torso">
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
         </div>
         <button class="carousel-btn next" data-track="track-torso">›</button>
       </div>
+
+      <!-- Resumen visual de capas activas del tronco -->
+      <div class="torso-summary-bar" id="torso-summary-bar"></div>
     </section>
 
     <div class="section-gap"></div>
 
-    <!-- Piernas -->
-    <section class="carousel-section">
+    <!-- Piernas con excepción para vestido largo -->
+    <section class="carousel-section" id="section-legs">
       <div class="carousel-header">
         <div class="carousel-label">
           <span class="cat-icon">👖</span>
           <span>Piernas</span>
+          <span id="legs-badge-slot"></span>
           <span class="cat-count" id="count-legs"></span>
         </div>
       </div>
       <div class="carousel-outer">
         <button class="carousel-btn prev" data-track="track-legs">‹</button>
         <div class="carousel-track" id="track-legs">
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
         </div>
         <button class="carousel-btn next" data-track="track-legs">›</button>
       </div>
@@ -106,9 +131,9 @@
       <div class="carousel-outer">
         <button class="carousel-btn prev" data-track="track-feet">‹</button>
         <div class="carousel-track" id="track-feet">
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
-          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:130px;flex-shrink:0;"></div>
         </div>
         <button class="carousel-btn next" data-track="track-feet">›</button>
       </div>
