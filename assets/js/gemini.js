@@ -1,45 +1,98 @@
 // ─── Gemini API helpers ────────────────────────────────────────────────────────
-import { getConfig } from './config.js';
+import { getGeminiKeys, getActiveGeminiIndex, getActiveGeminiKey, rotateGeminiKey } from './config.js';
+import { showToast } from './auth.js';
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
 
 /**
- * Low-level Gemini call. Returns parsed JSON from the model's response.
+ * Checks if an HTTP response code or error object indicates rate limit or token exhaustion.
+ */
+function isQuotaExhausted(status, errData) {
+  if (status === 429) return true;
+  const msg = (errData?.error?.message || errData?.message || '').toLowerCase();
+  const st  = (errData?.error?.status || errData?.status || '').toLowerCase();
+  return (
+    st.includes('resource_exhausted') ||
+    msg.includes('resource has been exhausted') ||
+    msg.includes('quota') ||
+    msg.includes('rate limit') ||
+    msg.includes('too many requests')
+  );
+}
+
+/**
+ * Low-level Gemini call with automatic multi-key rotation on quota exhaustion.
  */
 async function callGemini(parts, temperature = 0.3) {
-  const { geminiKey } = getConfig();
-  if (!geminiKey) throw new Error('Clave de Gemini no configurada. Ve a Configuración.');
-
-  const res = await fetch(`${BASE_URL}?key=${geminiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature,
-        maxOutputTokens: 1024,
-      },
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Gemini API error ${res.status}`);
+  const allKeys = getGeminiKeys();
+  if (allKeys.length === 0) {
+    throw new Error('No hay claves de Gemini configuradas. Ve a Configuración.');
   }
 
-  const json = await res.json();
-  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Respuesta vacía de Gemini.');
+  const maxAttempts = allKeys.length;
+  let lastError = null;
 
-  try {
-    return JSON.parse(text);
-  } catch {
-    // Sometimes Gemini wraps JSON in markdown fences
-    const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (match) return JSON.parse(match[1]);
-    throw new Error('La respuesta de Gemini no es JSON válido.');
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const currentKey = getActiveGeminiKey();
+    const currentIdx = getActiveGeminiIndex();
+
+    try {
+      const res = await fetch(`${BASE_URL}?key=${currentKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature,
+            maxOutputTokens: 1024,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+
+        // Detect quota / token limit
+        if (isQuotaExhausted(res.status, errJson)) {
+          if (allKeys.length > 1 && attempt < maxAttempts - 1) {
+            const rotation = rotateGeminiKey();
+            showToast(`⚠️ Cuota agotada en clave ${currentIdx + 1}. Cambiando a clave ${rotation.index + 1}/${rotation.total}…`, 'info', 4500);
+            continue; // Retry with next key
+          } else {
+            throw new Error(`Cuota agotada en todas las claves Gemini configuradas (${allKeys.length}). Añade otra clave en Configuración.`);
+          }
+        }
+
+        throw new Error(errJson?.error?.message || `Gemini API error ${res.status}`);
+      }
+
+      const json = await res.json();
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('Respuesta vacía de Gemini.');
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        // Sometimes Gemini wraps JSON in markdown fences
+        const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (match) return JSON.parse(match[1]);
+        throw new Error('La respuesta de Gemini no es JSON válido.');
+      }
+
+    } catch (err) {
+      lastError = err;
+      // If error message indicates quota exhaustion, try rotating
+      if (isQuotaExhausted(0, err) && allKeys.length > 1 && attempt < maxAttempts - 1) {
+        const rotation = rotateGeminiKey();
+        showToast(`⚠️ Cuota agotada. Cambiando a clave ${rotation.index + 1}/${rotation.total}…`, 'info', 4500);
+        continue;
+      }
+      throw err;
+    }
   }
+
+  throw lastError || new Error('Error al conectar con la API de Gemini.');
 }
 
 /**
