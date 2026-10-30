@@ -1,7 +1,7 @@
 // ─── Gemini API helpers ────────────────────────────────────────────────────────
 import { getConfig } from './config.js';
 
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
 
 /**
  * Low-level Gemini call. Returns parsed JSON from the model's response.
