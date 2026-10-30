@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#22C55E">
+  <meta name="description" content="What To Wear – Tu armario digital inteligente">
+  <title>WTW – What To Wear</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/wtw-logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ────────────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <img src="assets/img/wtw-logo.svg" alt="WTW" class="logo">
+    <span class="header-title">What To Wear</span>
+    <div class="header-actions">
+      <span id="greeting" class="text-muted text-sm"></span>
+    </div>
+  </header>
+
+  <!-- ── Main ──────────────────────────────────────────────────────────────── -->
+  <main class="page-main" style="padding-left:0;padding-right:0;max-width:100%;">
+
+    <!-- Cabeza -->
+    <section class="carousel-section">
+      <div class="carousel-header">
+        <div class="carousel-label">
+          <span class="cat-icon">🎩</span>
+          <span>Cabeza</span>
+          <span class="cat-count" id="count-head"></span>
+        </div>
+      </div>
+      <div class="carousel-outer">
+        <button class="carousel-btn prev" data-track="track-head">‹</button>
+        <div class="carousel-track" id="track-head">
+          <!-- Skeleton loading -->
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+        </div>
+        <button class="carousel-btn next" data-track="track-head">›</button>
+      </div>
+    </section>
+
+    <div class="section-gap"></div>
+
+    <!-- Tronco -->
+    <section class="carousel-section">
+      <div class="carousel-header">
+        <div class="carousel-label">
+          <span class="cat-icon">👕</span>
+          <span>Tronco</span>
+          <span class="cat-count" id="count-torso"></span>
+        </div>
+      </div>
+      <div class="carousel-outer">
+        <button class="carousel-btn prev" data-track="track-torso">‹</button>
+        <div class="carousel-track" id="track-torso">
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+        </div>
+        <button class="carousel-btn next" data-track="track-torso">›</button>
+      </div>
+    </section>
+
+    <div class="section-gap"></div>
+
+    <!-- Piernas -->
+    <section class="carousel-section">
+      <div class="carousel-header">
+        <div class="carousel-label">
+          <span class="cat-icon">👖</span>
+          <span>Piernas</span>
+          <span class="cat-count" id="count-legs"></span>
+        </div>
+      </div>
+      <div class="carousel-outer">
+        <button class="carousel-btn prev" data-track="track-legs">‹</button>
+        <div class="carousel-track" id="track-legs">
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+        </div>
+        <button class="carousel-btn next" data-track="track-legs">›</button>
+      </div>
+    </section>
+
+    <div class="section-gap"></div>
+
+    <!-- Pies -->
+    <section class="carousel-section">
+      <div class="carousel-header">
+        <div class="carousel-label">
+          <span class="cat-icon">👟</span>
+          <span>Pies</span>
+          <span class="cat-count" id="count-feet"></span>
+        </div>
+      </div>
+      <div class="carousel-outer">
+        <button class="carousel-btn prev" data-track="track-feet">‹</button>
+        <div class="carousel-track" id="track-feet">
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+          <div class="clothing-card skeleton" style="height:130px;width:110px;flex-shrink:0;"></div>
+        </div>
+        <button class="carousel-btn next" data-track="track-feet">›</button>
+      </div>
+    </section>
+
+    <!-- ── Generate button ─────────────────────────────────────────────────── -->
+    <div class="generate-section" style="padding-top:20px;">
+      <button id="btn-generate" class="btn btn-generate btn-large">
+        ✨ Generar outfit
+      </button>
+    </div>
+
+    <!-- ── AI Chat ─────────────────────────────────────────────────────────── -->
+    <div class="chat-section">
+      <div class="chat-input-wrapper">
+        <textarea
+          id="outfit-prompt"
+          placeholder="¿Qué te apetece ponerte hoy?"
+          rows="2"
+          aria-label="Describe cómo quieres vestir"
+        ></textarea>
+        <button id="btn-send" class="btn-send" title="Generar outfit con IA" aria-label="Enviar">
+          <!-- Filled by home.js -->
+          ➤
+        </button>
+      </div>
+      <p id="ai-explanation" class="ai-explanation hidden"></p>
+    </div>
+
+  </main>
+
+  <!-- ── Floating heart ─────────────────────────────────────────────────────── -->
+  <button id="fab-heart" class="fab-heart hidden" title="Guardar outfit en favoritos" aria-label="Guardar en favoritos">
+    ❤️
+  </button>
+
+  <!-- ── Bottom nav ─────────────────────────────────────────────────────────── -->
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <a href="index.html" class="nav-item active" aria-current="page">
+      <span class="nav-icon">🏠</span>
+      <span>Inicio</span>
+    </a>
+    <a href="wardrobe.html" class="nav-item">
+      <span class="nav-icon">👔</span>
+      <span>Armario</span>
+    </a>
+    <a href="favorites.html" class="nav-item">
+      <span class="nav-icon">❤️</span>
+      <span>Favoritos</span>
+    </a>
+    <a href="config.html" class="nav-item">
+      <span class="nav-icon">⚙️</span>
+      <span>Config</span>
+    </a>
+  </nav>
+
+  <!-- ── Save to Favorites Modal ────────────────────────────────────────────── -->
+  <div id="modal-save" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-save-title">
+    <div class="modal-card">
+      <div class="modal-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 class="modal-title" id="modal-save-title">Guardar en favoritos</h2>
+        <button id="btn-close-save-modal" class="btn-icon" aria-label="Cerrar">✕</button>
+      </div>
+
+      <p class="text-muted text-sm">Selecciona una colección o crea una nueva:</p>
+
+      <!-- Existing collections -->
+      <div id="modal-collection-list" class="collection-list-modal"></div>
+
+      <div class="divider"></div>
+
+      <!-- Create new collection -->
+      <p class="text-sm font-bold" style="color:var(--text)">Nueva colección</p>
+
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div id="emoji-picker" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <input
+          type="text"
+          id="new-col-name"
+          placeholder="Nombre de la colección…"
+          style="flex:1;"
+          maxlength="60"
+        >
+        <button id="btn-save-new-col" class="btn btn-primary" style="flex-shrink:0;">
+          Crear y guardar
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script type="module" src="assets/js/home.js"></script>
+</body>
+</html>

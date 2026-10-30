@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#22C55E">
+  <title>Configuración – WTW</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/wtw-logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ────────────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <img src="assets/img/wtw-logo.svg" alt="WTW" class="logo">
+    <span class="header-title">Configuración</span>
+  </header>
+
+  <!-- ── Main ──────────────────────────────────────────────────────────────── -->
+  <main class="page-main" style="padding-top:20px;display:flex;flex-direction:column;gap:16px;">
+
+    <!-- ── API Keys section ──────────────────────────────────────────────────── -->
+    <section class="config-section">
+      <p class="config-section-title">🔑 Claves de API</p>
+
+      <p class="text-muted text-sm" style="margin-top:-4px;">
+        Tus claves se guardan <strong>solo en este dispositivo</strong> (localStorage)
+        y nunca se envían a ningún servidor intermedio.
+      </p>
+
+      <div class="form-field">
+        <label for="cfg-supabase-url">Supabase Project URL</label>
+        <input type="url" id="cfg-supabase-url" placeholder="https://xxxxxxxxxxx.supabase.co" autocomplete="off">
+      </div>
+
+      <div class="form-field">
+        <label for="cfg-supabase-key">Supabase Anon Key</label>
+        <input type="password" id="cfg-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIs…" autocomplete="off">
+      </div>
+
+      <div class="form-field">
+        <label for="cfg-gemini-key">Google Gemini API Key</label>
+        <input type="password" id="cfg-gemini-key" placeholder="AIzaSy…" autocomplete="off">
+      </div>
+
+      <p id="cfg-error" class="form-error hidden"></p>
+
+      <button id="btn-save-config" class="btn btn-primary btn-block">
+        💾 Guardar configuración
+      </button>
+
+      <div style="display:flex;gap:12px;font-size:0.8rem;">
+        <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">
+          🔗 Panel Supabase
+        </a>
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">
+          🔗 Obtener clave Gemini
+        </a>
+      </div>
+    </section>
+
+    <!-- ── Account section ───────────────────────────────────────────────────── -->
+    <section class="config-section" id="account-section">
+      <p class="config-section-title">👤 Cuenta</p>
+
+      <!-- Shown when not logged in -->
+      <div id="login-section">
+        <div class="tab-group" style="margin-bottom:12px;">
+          <button class="tab-btn active" data-tab="login">Iniciar sesión</button>
+          <button class="tab-btn" data-tab="register">Crear cuenta</button>
+        </div>
+
+        <div class="form-field">
+          <label for="auth-email">Email</label>
+          <input type="email" id="auth-email" placeholder="correo@ejemplo.com" autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label for="auth-password">Contraseña</label>
+          <input type="password" id="auth-password" placeholder="Mínimo 6 caracteres" autocomplete="current-password">
+        </div>
+
+        <p id="auth-error" class="form-error hidden"></p>
+
+        <button id="btn-auth-submit" class="btn btn-primary btn-block">
+          Entrar
+        </button>
+      </div>
+
+      <!-- Shown when logged in -->
+      <div id="logged-in-section" class="hidden">
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">?</div>
+          <div>
+            <div class="user-email" id="user-email">–</div>
+            <div class="text-muted text-sm">Sesión activa</div>
+          </div>
+        </div>
+        <button id="btn-logout" class="btn btn-danger btn-block" style="margin-top:4px;">
+          Cerrar sesión
+        </button>
+      </div>
+    </section>
+
+    <!-- ── About section ─────────────────────────────────────────────────────── -->
+    <section class="config-section">
+      <p class="config-section-title">ℹ️ Acerca de</p>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <img src="assets/img/wtw-logo.svg" alt="WTW" style="width:48px;height:48px;">
+        <div>
+          <p style="font-weight:700;">What To Wear</p>
+          <p class="text-muted text-sm">Tu armario digital inteligente · v1.0</p>
+        </div>
+      </div>
+      <p class="text-muted text-sm" style="line-height:1.6;">
+        Clasificación y sugerencias de outfits mediante <strong>Google Gemini 1.5 Flash</strong>.
+        Base de datos y almacenamiento con <strong>Supabase</strong>.
+      </p>
+    </section>
+
+    <!-- Bottom padding -->
+    <div style="height:8px;"></div>
+
+  </main>
+
+  <!-- ── Bottom nav ─────────────────────────────────────────────────────────── -->
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🏠</span>
+      <span>Inicio</span>
+    </a>
+    <a href="wardrobe.html" class="nav-item">
+      <span class="nav-icon">👔</span>
+      <span>Armario</span>
+    </a>
+    <a href="favorites.html" class="nav-item">
+      <span class="nav-icon">❤️</span>
+      <span>Favoritos</span>
+    </a>
+    <a href="config.html" class="nav-item active" aria-current="page">
+      <span class="nav-icon">⚙️</span>
+      <span>Config</span>
+    </a>
+  </nav>
+
+</div><!-- /#app -->
+
+<script type="module">
+import { getConfig, setConfig } from './assets/js/config.js';
+import { getCurrentUser, signIn, signUp, signOut } from './assets/js/supabase.js';
+import { showToast } from './assets/js/auth.js';
+
+// ── Restore saved config ───────────────────────────────────────────────────────
+const cfg = getConfig();
+if (cfg.supabaseUrl) document.getElementById('cfg-supabase-url').value = cfg.supabaseUrl;
+if (cfg.supabaseKey) document.getElementById('cfg-supabase-key').value = cfg.supabaseKey;
+if (cfg.geminiKey)   document.getElementById('cfg-gemini-key').value   = cfg.geminiKey;
+
+// ── Save config ────────────────────────────────────────────────────────────────
+document.getElementById('btn-save-config').addEventListener('click', () => {
+  const url = document.getElementById('cfg-supabase-url').value.trim();
+  const key = document.getElementById('cfg-supabase-key').value.trim();
+  const gem = document.getElementById('cfg-gemini-key').value.trim();
+  const err = document.getElementById('cfg-error');
+
+  if (!url || !key || !gem) {
+    err.textContent = 'Todos los campos son obligatorios.';
+    err.classList.remove('hidden');
+    return;
+  }
+  if (!url.startsWith('https://')) {
+    err.textContent = 'La URL de Supabase debe empezar por https://';
+    err.classList.remove('hidden');
+    return;
+  }
+  err.classList.add('hidden');
+  setConfig({ supabaseUrl: url, supabaseKey: key, geminiKey: gem });
+  showToast('✅ Configuración guardada', 'success');
+});
+
+// ── Auth UI ────────────────────────────────────────────────────────────────────
+let authMode = 'login';
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    authMode = btn.dataset.tab;
+    document.getElementById('btn-auth-submit').textContent = authMode === 'login' ? 'Entrar' : 'Registrarse';
+    document.getElementById('auth-error').classList.add('hidden');
+    document.getElementById('auth-password').autocomplete = authMode === 'login' ? 'current-password' : 'new-password';
+  });
+});
+
+document.getElementById('btn-auth-submit').addEventListener('click', async () => {
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl    = document.getElementById('auth-error');
+  const btn      = document.getElementById('btn-auth-submit');
+
+  if (!email || !password) {
+    errEl.textContent = 'Completa email y contraseña.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '…';
+  errEl.classList.add('hidden');
+
+  try {
+    if (authMode === 'login') {
+      await signIn(email, password);
+    } else {
+      await signUp(email, password);
+    }
+    await updateAccountUI();
+    showToast('✅ Sesión iniciada', 'success');
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Entrar' : 'Registrarse';
+  }
+});
+
+document.getElementById('btn-logout').addEventListener('click', async () => {
+  await signOut();
+  await updateAccountUI();
+  showToast('Sesión cerrada', 'info');
+});
+
+async function updateAccountUI() {
+  try {
+    const user = await getCurrentUser();
+    const loginSec  = document.getElementById('login-section');
+    const loggedSec = document.getElementById('logged-in-section');
+    if (user) {
+      loginSec.classList.add('hidden');
+      loggedSec.classList.remove('hidden');
+      document.getElementById('user-email').textContent = user.email;
+      document.getElementById('user-avatar').textContent = user.email?.[0]?.toUpperCase() || '?';
+    } else {
+      loginSec.classList.remove('hidden');
+      loggedSec.classList.add('hidden');
+    }
+  } catch {
+    // Supabase not configured yet — skip
+  }
+}
+
+// Initial auth state
+updateAccountUI();
+</script>
+</body>
+</html>

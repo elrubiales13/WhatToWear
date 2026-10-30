@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#22C55E">
+  <title>Favoritos – WTW</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/wtw-logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ────────────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <img src="assets/img/wtw-logo.svg" alt="WTW" class="logo">
+    <span class="header-title">Favoritos</span>
+    <div class="header-actions">
+      <button id="btn-new-collection" class="btn btn-ghost" style="padding:6px 14px;font-size:0.85rem;">
+        + Nueva
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Breadcrumb ─────────────────────────────────────────────────────────── -->
+  <div id="breadcrumb" class="breadcrumb">
+    <span class="crumb-current">❤️ Favoritos</span>
+  </div>
+
+  <!-- ── Main ──────────────────────────────────────────────────────────────── -->
+  <main style="flex:1;">
+
+    <!-- View: Collections list -->
+    <div id="view-collections" class="page-view">
+      <div id="collections-grid" class="collections-grid"></div>
+      <div id="empty-collections" class="empty-state hidden">
+        <span class="empty-icon">❤️</span>
+        <h3>Sin colecciones aún</h3>
+        <p class="text-muted text-sm">
+          Crea tu primera colección con el botón <strong>+ Nueva</strong>.<br>
+          Después guarda outfits desde la pantalla de inicio.
+        </p>
+        <button id="btn-new-col-empty" class="btn btn-primary" style="margin-top:8px;">
+          + Crear colección
+        </button>
+      </div>
+    </div>
+
+    <!-- View: Outfits inside a collection -->
+    <div id="view-outfits" class="page-view hidden">
+      <div id="outfits-grid" class="outfits-grid"></div>
+      <div id="empty-outfits" class="empty-state hidden">
+        <span class="empty-icon">👔</span>
+        <h3>Esta colección está vacía</h3>
+        <p class="text-muted text-sm">
+          Genera un outfit en la pantalla de inicio<br>
+          y guárdalo aquí con el botón ❤️.
+        </p>
+        <a href="index.html" class="btn btn-primary" style="margin-top:8px;">Ir a inicio</a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Bottom nav ─────────────────────────────────────────────────────────── -->
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🏠</span>
+      <span>Inicio</span>
+    </a>
+    <a href="wardrobe.html" class="nav-item">
+      <span class="nav-icon">👔</span>
+      <span>Armario</span>
+    </a>
+    <a href="favorites.html" class="nav-item active" aria-current="page">
+      <span class="nav-icon">❤️</span>
+      <span>Favoritos</span>
+    </a>
+    <a href="config.html" class="nav-item">
+      <span class="nav-icon">⚙️</span>
+      <span>Config</span>
+    </a>
+  </nav>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       New Collection Modal
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <div id="modal-new-col" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="new-col-title">
+    <div class="modal-card" style="max-width:440px;">
+      <div class="modal-handle"></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 class="modal-title" id="new-col-title">Nueva colección</h2>
+        <button id="btn-close-new-col" class="btn-icon" aria-label="Cerrar">✕</button>
+      </div>
+
+      <!-- Emoji picker -->
+      <div class="form-field">
+        <label>Elige un icono</label>
+        <div id="emoji-picker" class="emoji-grid"></div>
+      </div>
+
+      <!-- Name input -->
+      <div class="form-field">
+        <label for="new-col-name">Nombre de la colección</label>
+        <input
+          type="text"
+          id="new-col-name"
+          placeholder="Ej: Ropa para ir elegante…"
+          maxlength="60"
+          autofocus
+        >
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="btn-cancel-new-col"
+                onclick="document.getElementById('modal-new-col').classList.add('hidden')">
+          Cancelar
+        </button>
+        <button id="btn-create-col" class="btn btn-primary">
+          Crear colección
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script type="module" src="assets/js/favorites.js"></script>
+<script>
+  // Wire up secondary "create" button in empty state
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-new-col-empty')?.addEventListener('click', () => {
+      document.getElementById('btn-new-collection')?.click();
+    });
+  });
+</script>
+</body>
+</html>

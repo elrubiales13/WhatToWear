@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#22C55E">
+  <title>Armario – WTW</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/wtw-logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ────────────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <img src="assets/img/wtw-logo.svg" alt="WTW" class="logo">
+    <span class="header-title">Mi Armario</span>
+    <div class="header-actions">
+      <span id="clothes-count" class="text-muted text-sm"></span>
+    </div>
+  </header>
+
+  <!-- ── Filter bar ─────────────────────────────────────────────────────────── -->
+  <div id="filter-bar" class="filter-bar" role="group" aria-label="Filtrar por categoría">
+    <!-- Populated by wardrobe.js -->
+  </div>
+
+  <!-- ── Main content ───────────────────────────────────────────────────────── -->
+  <main style="flex:1;">
+
+    <!-- Grid -->
+    <div id="clothes-grid" class="clothes-grid"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state hidden">
+      <span class="empty-icon">👔</span>
+      <h3>Tu armario está vacío</h3>
+      <p class="text-muted text-sm">Pulsa el botón + para añadir tu primera prenda.<br>¡La IA la clasificará automáticamente!</p>
+    </div>
+
+  </main>
+
+  <!-- ── FAB add ─────────────────────────────────────────────────────────────── -->
+  <button id="fab-add" class="fab-add" title="Añadir prenda" aria-label="Añadir prenda">
+    +
+  </button>
+
+  <!-- ── Bottom nav ─────────────────────────────────────────────────────────── -->
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🏠</span>
+      <span>Inicio</span>
+    </a>
+    <a href="wardrobe.html" class="nav-item active" aria-current="page">
+      <span class="nav-icon">👔</span>
+      <span>Armario</span>
+    </a>
+    <a href="favorites.html" class="nav-item">
+      <span class="nav-icon">❤️</span>
+      <span>Favoritos</span>
+    </a>
+    <a href="config.html" class="nav-item">
+      <span class="nav-icon">⚙️</span>
+      <span>Config</span>
+    </a>
+  </nav>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       Upload / Add Clothing Modal
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <div id="modal-upload" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
+    <div class="modal-card" style="max-width:480px;">
+      <div class="modal-handle"></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 class="modal-title" id="upload-modal-title">Añadir prenda</h2>
+        <button id="btn-close-upload" class="btn-icon" aria-label="Cerrar">✕</button>
+      </div>
+
+      <!-- Image preview / drop zone -->
+      <div id="img-preview-wrap" class="img-preview-wrap" role="button" tabindex="0"
+           aria-label="Seleccionar imagen" title="Haz clic o arrastra una imagen">
+        <img id="img-preview" src="" alt="Vista previa" class="hidden" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
+        <div id="upload-placeholder" class="upload-placeholder">
+          <span class="upload-icon">📸</span>
+          <span>Haz clic o arrastra una foto</span>
+          <span style="font-size:0.75rem;color:var(--text-muted)">JPG, PNG, WEBP · máx. 10 MB</span>
+        </div>
+      </div>
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Seleccionar imagen">
+
+      <!-- AI loading indicator -->
+      <div id="ai-loading" class="ai-loading hidden">
+        <span class="spinner spinner-dark"></span>
+        <span>Analizando prenda con IA…</span>
+      </div>
+
+      <!-- Classification result form -->
+      <div id="classify-result" class="hidden" style="display:flex;flex-direction:column;gap:12px;">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <p class="text-sm font-bold">Resultado de la IA</p>
+          <button id="btn-reclassify" class="btn btn-ghost" style="padding:6px 12px;font-size:0.8rem;">
+            🔄 Re-analizar
+          </button>
+        </div>
+
+        <!-- Category -->
+        <div class="form-field">
+          <label>Categoría</label>
+          <div class="cat-radio-group" role="radiogroup" aria-label="Categoría">
+            <div class="cat-radio">
+              <input type="radio" name="cat-radio" id="cat-head"  value="head">
+              <label for="cat-head">🎩 Cabeza</label>
+            </div>
+            <div class="cat-radio">
+              <input type="radio" name="cat-radio" id="cat-torso" value="torso" checked>
+              <label for="cat-torso">👕 Tronco</label>
+            </div>
+            <div class="cat-radio">
+              <input type="radio" name="cat-radio" id="cat-legs"  value="legs">
+              <label for="cat-legs">👖 Piernas</label>
+            </div>
+            <div class="cat-radio">
+              <input type="radio" name="cat-radio" id="cat-feet"  value="feet">
+              <label for="cat-feet">👟 Pies</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Name -->
+        <div class="form-field">
+          <label for="field-name">Nombre</label>
+          <input type="text" id="field-name" placeholder="Ej: Camisa Oxford blanca" maxlength="80">
+        </div>
+
+        <!-- Subcategory -->
+        <div class="form-field">
+          <label for="field-subcategory">Tipo de prenda</label>
+          <input type="text" id="field-subcategory" placeholder="Ej: camisa, vaquero, zapatilla…" maxlength="40">
+        </div>
+
+        <!-- Formality -->
+        <div class="form-field">
+          <label>Formalidad</label>
+          <div class="formality-row">
+            <span class="text-muted text-sm">😎</span>
+            <input type="range" id="field-formality" min="1" max="5" step="1" value="3"
+                   aria-label="Nivel de formalidad">
+            <span class="text-muted text-sm">👔</span>
+          </div>
+          <p id="formality-label" class="text-sm" style="color:var(--primary-dark);margin-top:4px;font-weight:500;">3 – Neutro</p>
+        </div>
+
+        <!-- Colors -->
+        <div class="form-field">
+          <label for="field-colors">Colores (separados por coma)</label>
+          <input type="text" id="field-colors" placeholder="Ej: azul marino, blanco" maxlength="100">
+        </div>
+
+        <!-- Save button -->
+        <div class="modal-actions">
+          <button id="btn-save-clothing" class="btn btn-primary btn-block" disabled>
+            Guardar prenda
+          </button>
+        </div>
+
+      </div><!-- /#classify-result -->
+
+    </div><!-- /.modal-card -->
+  </div><!-- /#modal-upload -->
+
+</div><!-- /#app -->
+
+<script type="module" src="assets/js/wardrobe.js"></script>
+</body>
+</html>
