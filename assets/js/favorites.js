@@ -220,7 +220,7 @@ async function handleCreateCollection() {
   saveBtn.textContent = '…';
 
   try {
-    const col = await createCollection(name, selectedEmoji);
+    const col = await createCollection(name, selectedEmoji, user?.id);
     collections.unshift(col);
     closeModal('modal-new-col');
     renderCollectionsView();

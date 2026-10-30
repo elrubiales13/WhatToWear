@@ -618,7 +618,7 @@ async function createAndSave() {
   if (!name) { showToast('Escribe un nombre para la colección', 'error'); return; }
 
   try {
-    const col = await createCollection(name, selectedEmoji);
+    const col = await createCollection(name, selectedEmoji, user?.id);
     _collections.unshift(col);
     renderCollectionList();
     nameInput.value = '';

@@ -119,10 +119,17 @@ export async function getCollections() {
   return data ?? [];
 }
 
-export async function createCollection(name, emoji = '👔') {
+export async function createCollection(name, emoji = '👔', userId = null) {
+  let uid = userId;
+  if (!uid) {
+    const { data: { user } } = await getSupabase().auth.getUser();
+    uid = user?.id;
+  }
+  if (!uid) throw new Error('Debes iniciar sesión para crear colecciones.');
+
   const { data, error } = await getSupabase()
     .from('collections')
-    .insert({ name: name.trim(), emoji })
+    .insert({ user_id: uid, name: name.trim(), emoji })
     .select()
     .single();
   if (error) throw error;
