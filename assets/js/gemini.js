@@ -21,6 +21,71 @@ function isQuotaExhausted(status, errData) {
 }
 
 /**
+ * Robustly extracts the final answer text from candidates, filtering out any internal reasoning / thought parts.
+ */
+function extractTextFromCandidate(candidate) {
+  const parts = candidate?.content?.parts || [];
+  // Exclude internal thinking parts
+  const answerParts = parts.filter(p => !p.thought);
+  const targetParts = answerParts.length > 0 ? answerParts : parts;
+  return targetParts.map(p => p.text || '').join('\n').trim();
+}
+
+/**
+ * Robustly cleans and parses JSON from model output, handling markdown fences,
+ * conversational text, thought tokens, or trailing commas.
+ */
+function cleanAndParseJSON(raw) {
+  if (!raw || typeof raw !== 'string') {
+    throw new Error('Respuesta vacía del modelo Gemini.');
+  }
+
+  const trimmed = raw.trim();
+
+  // 1. Direct JSON parse attempt
+  try {
+    return JSON.parse(trimmed);
+  } catch {}
+
+  // 2. Markdown code block ```json ... ``` or ``` ... ```
+  const codeBlockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (codeBlockMatch && codeBlockMatch[1]) {
+    try {
+      return JSON.parse(codeBlockMatch[1].trim());
+    } catch {}
+  }
+
+  // 3. Find outermost object braces {...}
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace  = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    const candidateJson = trimmed.slice(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(candidateJson);
+    } catch {
+      // Try stripping trailing commas e.g. { "a": 1, }
+      const cleanCommas = candidateJson.replace(/,(\s*[}\]])/g, '$1');
+      try {
+        return JSON.parse(cleanCommas);
+      } catch {}
+    }
+  }
+
+  // 4. Find outermost array brackets [...]
+  const firstBracket = trimmed.indexOf('[');
+  const lastBracket  = trimmed.lastIndexOf(']');
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    const candidateJson = trimmed.slice(firstBracket, lastBracket + 1);
+    try {
+      return JSON.parse(candidateJson);
+    } catch {}
+  }
+
+  console.error('Gemini output could not be parsed as JSON:', raw);
+  throw new Error('La respuesta de Gemini no es JSON válido. Vuelve a intentarlo.');
+}
+
+/**
  * Low-level Gemini call with automatic multi-key rotation on quota exhaustion.
  */
 async function callGemini(parts, temperature = 0.3) {
@@ -45,7 +110,7 @@ async function callGemini(parts, temperature = 0.3) {
           generationConfig: {
             responseMimeType: 'application/json',
             temperature,
-            maxOutputTokens: 1024,
+            maxOutputTokens: 2048,
           },
         }),
       });
@@ -68,17 +133,12 @@ async function callGemini(parts, temperature = 0.3) {
       }
 
       const json = await res.json();
-      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const candidate = json?.candidates?.[0];
+      const text = extractTextFromCandidate(candidate);
+
       if (!text) throw new Error('Respuesta vacía de Gemini.');
 
-      try {
-        return JSON.parse(text);
-      } catch {
-        // Sometimes Gemini wraps JSON in markdown fences
-        const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (match) return JSON.parse(match[1]);
-        throw new Error('La respuesta de Gemini no es JSON válido.');
-      }
+      return cleanAndParseJSON(text);
 
     } catch (err) {
       lastError = err;
