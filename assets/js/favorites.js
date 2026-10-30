@@ -107,10 +107,17 @@ function renderOutfitsView() {
 }
 
 function outfitCardHTML(outfit) {
+  const isDressTorso = Boolean(
+    outfit.torso && (
+      (outfit.torso.subcategory || '').toLowerCase().includes('vestido') ||
+      (outfit.torso.name || '').toLowerCase().includes('vestido')
+    )
+  );
+
   const pieces = [
     { cat: 'head',  item: outfit.head,  icon: '🎩' },
-    { cat: 'torso', item: outfit.torso, icon: '👕' },
-    { cat: 'legs',  item: outfit.legs,  icon: '👖' },
+    { cat: 'torso', item: outfit.torso, icon: isDressTorso ? '👗' : '👕' },
+    { cat: 'legs',  item: outfit.legs,  icon: isDressTorso ? '👗' : '👖' },
     { cat: 'feet',  item: outfit.feet,  icon: '👟' },
   ];
 
@@ -118,7 +125,7 @@ function outfitCardHTML(outfit) {
     if (p.item?.image_url) {
       return `<div class="outfit-cell"><img src="${p.item.image_url}" alt="${escHTML(p.item.name || '')}" loading="lazy"></div>`;
     }
-    return `<div class="outfit-cell">${p.icon}</div>`;
+    return `<div class="outfit-cell" title="${p.cat === 'legs' && isDressTorso ? 'Cubierto por vestido' : ''}">${p.icon}</div>`;
   }).join('');
 
   return `

@@ -52,7 +52,7 @@ export async function classifyClothing(base64, mime = 'image/jpeg') {
   return callGemini([
     { inlineData: { mimeType: mime, data: base64 } },
     {
-      text: `Analiza esta imagen de una prenda de ropa y devuelve ÚNICAMENTE este JSON (sin texto extra):
+      text: `Analiza esta imagen de una prenda de ropa o accesorio y devuelve ÚNICAMENTE este JSON (sin texto extra):
 {
   "category": "head" | "torso" | "legs" | "feet",
   "subcategory": string,
@@ -62,26 +62,27 @@ export async function classifyClothing(base64, mime = 'image/jpeg') {
 }
 
 Reglas de clasificación:
-- "head"  → gorros, gorras, sombreros, bufandas de cabeza, pañuelos
-- "torso" → camisetas, camisas, sudaderas, jerseys, chaquetas, abrigos, blazers, vestidos
-- "legs"  → pantalones, vaqueros, shorts, bermudas, faldas, leggings, mallas
-- "feet"  → zapatos, zapatillas, botas, sandalias, chanclas, mocasines, calcetines
+- "head"  → gorros, gorras, sombreros, boinas, pañuelos de cabeza
+- "torso" → camisetas, camisas, blusas, tops, jerseys, sudaderas, chaquetas, blazers, cazadoras, abrigos, gabardinas, parkas, vestidos, vestidos largos, bolsos, mochilas, bandoleras
+- "legs"  → pantalones, vaqueros, shorts, bermudas, faldas, leggings, medias, leotardos, pantys
+- "feet"  → zapatos, zapatillas, botas, botines, sandalias, mocasines, calcetines
 
 Para "formality": 1=muy informal, 2=informal, 3=neutro, 4=semiformal, 5=muy formal
 Para "colors": máximo 3 colores en español (ej: ["azul marino", "blanco"])
-Para "name": nombre descriptivo corto en español, máximo 4 palabras (ej: "Camisa blanca Oxford")
-Para "subcategory": una sola palabra en español (ej: "camisa", "vaquero", "zapatilla")
+Para "name": nombre descriptivo corto en español, máximo 4 palabras (ej: "Vestido largo floral", "Chaqueta vaquera")
+Para "subcategory": término exacto en español (ej: "vestido largo", "vestido", "camiseta", "camisa", "chaqueta", "abrigo", "bolso", "vaquero", "medias", "zapatilla")
 
-Si la imagen no muestra ropa reconocible, usa: category="torso", subcategory="prenda desconocida", formality=3`
+Si la imagen no muestra ropa reconocible, usa: category="torso", subcategory="prenda", formality=3`
     },
   ]);
 }
 
 /**
  * Generate an outfit from a natural-language description using the user's wardrobe.
+ * Supports multi-layer torso (base, jacket, coat, bag) and dress exceptions.
  * @param {string} description – user's text
  * @param {Array}  wardrobe    – array of clothing items from Supabase
- * @returns {{ head, torso, legs, feet, explanation }} – IDs or null
+ * @returns {{ head, torso_base, torso_jacket, torso_coat, torso_bag, legs, feet, explanation }}
  */
 export async function generateOutfitFromDescription(description, wardrobe) {
   if (wardrobe.length === 0) throw new Error('Tu armario está vacío. Añade ropa primero.');
@@ -93,7 +94,7 @@ export async function generateOutfitFromDescription(description, wardrobe) {
   const byCategory = (cat) => wardrobe.filter(w => w.category === cat).map(w => w.id);
 
   return callGemini([{
-    text: `Eres un asesor de moda personal. El armario del usuario es:
+    text: `Eres un asesor de moda personal experto. El armario del usuario es:
 [
 ${lines}
 ]
@@ -102,20 +103,23 @@ El usuario dice: "${description}"
 
 Selecciona el mejor outfit. Responde ÚNICAMENTE con este JSON:
 {
-  "head":  "<uuid o null>",
-  "torso": "<uuid>",
-  "legs":  "<uuid>",
-  "feet":  "<uuid>",
-  "explanation": "<máximo 2 frases en español explicando el look>"
+  "head":         "<uuid o null>",
+  "torso_base":   "<uuid>",
+  "torso_jacket": "<uuid o null>",
+  "torso_coat":   "<uuid o null>",
+  "torso_bag":    "<uuid o null>",
+  "legs":         "<uuid o null>",
+  "feet":         "<uuid>",
+  "explanation":  "<máximo 2 frases en español explicando el look y la combinación de capas>"
 }
 
-IMPORTANTE:
-- Solo puedes usar IDs del armario anterior.
-- IDs válidos head:  ${JSON.stringify(byCategory('head'))}
-- IDs válidos torso: ${JSON.stringify(byCategory('torso'))}
-- IDs válidos legs:  ${JSON.stringify(byCategory('legs'))}
-- IDs válidos feet:  ${JSON.stringify(byCategory('feet'))}
-- Si una categoría está vacía usa null.
-- Cuida la coherencia de formalidad entre prendas.`
+REGLAS DE MODA Y CAPAS:
+1. "torso_base": Prenda interior o principal (camiseta, camisa, blusa, top, vestido).
+2. "torso_jacket": Capa media opcional (chaqueta, cazadora, blazer, jersey, sudadera).
+3. "torso_coat": Capa exterior opcional (abrigo, gabardina, anorak) si el clima o contexto lo pide.
+4. "torso_bag": Bolso, mochila o accesorio si es conveniente.
+5. EXCEPCIÓN VESTIDOS: Si eliges un vestido largo o vestido completo en torso_base, "legs" DEBE ser null, EXCEPTO si el usuario tiene y es adecuado llevar medias o leotardos (¡nunca pongas pantalones o vaqueros con un vestido largo!).
+6. Solo puedes usar IDs válidos del inventario. Si no hay prenda apropiada para una capa opcional, usa null.
+7. Cuida la coherencia de formalidad y combinación de colores entre todas las prendas seleccionadas.`
   }], 0.5);
 }
