@@ -1315,6 +1315,109 @@ input[type="file"] { display: none; }
   color: var(--text-muted);
 }
 
+/* ── Gemini Multi-Key Pool ───────────────────────────────────────────────────── */
+.gemini-keys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.gemini-key-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  transition: all var(--transition);
+}
+.gemini-key-card.active-key {
+  border-color: var(--primary);
+  background: var(--primary-muted);
+}
+
+.gemini-key-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  flex: 1;
+}
+.gemini-key-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.gemini-key-card.active-key .gemini-key-dot {
+  background: var(--primary);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+}
+
+.gemini-key-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gemini-key-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--border);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.gemini-key-card.active-key .gemini-key-tag {
+  background: var(--primary);
+  color: #fff;
+}
+
+.gemini-key-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.btn-key-activate {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: var(--primary-dark);
+  background: rgba(34, 197, 94, 0.15);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.btn-key-activate:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-key-delete {
+  color: var(--danger);
+  font-size: 0.95rem;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity var(--transition);
+}
+.btn-key-delete:hover {
+  opacity: 1;
+}
+
 .user-info {
   display: flex;
   align-items: center;
