@@ -42,9 +42,26 @@
         <input type="password" id="cfg-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIs…" autocomplete="off">
       </div>
 
+      <!-- Gemini API Multi-Key Pool -->
       <div class="form-field">
-        <label for="cfg-gemini-key">Google Gemini API Key</label>
-        <input type="password" id="cfg-gemini-key" placeholder="AIzaSy…" autocomplete="off">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <label style="margin-bottom:0;">Pool de Claves Gemini AI</label>
+          <span id="gemini-keys-count" class="text-sm text-muted">0 claves</span>
+        </div>
+        <p class="text-muted text-sm" style="margin-bottom:8px;line-height:1.4;">
+          Añade varias claves gratuitas de Google AI Studio. Si una clave agota su límite de tokens o cuota por minuto, la app <strong>pivotará automáticamente</strong> a la siguiente clave sin interrumpir tus consultas.
+        </p>
+
+        <!-- Input to add a new key -->
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input type="password" id="cfg-new-gemini-key" placeholder="Pega una clave AIzaSy… y pulsa Añadir" autocomplete="off" style="flex:1;">
+          <button type="button" id="btn-add-gemini-key" class="btn btn-ghost" style="flex-shrink:0;padding:10px 16px;">
+            + Añadir
+          </button>
+        </div>
+
+        <!-- Rendered list of keys -->
+        <div id="gemini-keys-list" class="gemini-keys-list"></div>
       </div>
 
       <p id="cfg-error" class="form-error hidden"></p>
@@ -149,25 +166,126 @@
 </div><!-- /#app -->
 
 <script type="module">
-import { getConfig, setConfig } from './assets/js/config.js';
+import {
+  getConfig, setConfig,
+  getGeminiKeys, setGeminiKeys,
+  getActiveGeminiIndex, setActiveGeminiIndex
+} from './assets/js/config.js';
 import { getCurrentUser, signIn, signUp, signOut } from './assets/js/supabase.js';
 import { showToast } from './assets/js/auth.js';
+
+// ── Local state for keys ───────────────────────────────────────────────────────
+let geminiKeys = getGeminiKeys();
 
 // ── Restore saved config ───────────────────────────────────────────────────────
 const cfg = getConfig();
 if (cfg.supabaseUrl) document.getElementById('cfg-supabase-url').value = cfg.supabaseUrl;
 if (cfg.supabaseKey) document.getElementById('cfg-supabase-key').value = cfg.supabaseKey;
-if (cfg.geminiKey)   document.getElementById('cfg-gemini-key').value   = cfg.geminiKey;
+
+function maskKey(k) {
+  if (k.length <= 10) return k;
+  return `${k.slice(0, 6)}••••••••${k.slice(-4)}`;
+}
+
+function renderGeminiKeys() {
+  const container = document.getElementById('gemini-keys-list');
+  const countEl = document.getElementById('gemini-keys-count');
+  const activeIdx = getActiveGeminiIndex();
+
+  if (countEl) {
+    countEl.textContent = `${geminiKeys.length} clave${geminiKeys.length !== 1 ? 's' : ''}`;
+  }
+
+  if (geminiKeys.length === 0) {
+    container.innerHTML = `
+      <p class="text-muted text-sm" style="font-style:italic;padding:6px 0;">
+        No hay claves configuradas. Añade al menos una clave para usar la IA.
+      </p>`;
+    return;
+  }
+
+  container.innerHTML = geminiKeys.map((key, idx) => {
+    const isActive = idx === activeIdx;
+    return `
+      <div class="gemini-key-card ${isActive ? 'active-key' : ''}" data-index="${idx}">
+        <div class="gemini-key-info">
+          <span class="gemini-key-dot" title="${isActive ? 'Clave activa actualmente' : 'Clave de respaldo'}"></span>
+          <span class="gemini-key-text" title="${key}">${maskKey(key)}</span>
+          <span class="gemini-key-tag">${isActive ? 'Activa' : 'Respaldo'}</span>
+        </div>
+        <div class="gemini-key-actions">
+          ${!isActive ? `<button type="button" class="btn-key-activate" data-index="${idx}" title="Marcar como clave principal">Activar</button>` : ''}
+          <button type="button" class="btn-key-delete" data-index="${idx}" title="Eliminar clave">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Bind activate buttons
+  container.querySelectorAll('.btn-key-activate').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.index, 10);
+      setActiveGeminiIndex(idx);
+      renderGeminiKeys();
+      showToast(`Clave ${idx + 1} activada como principal`, 'info', 2500);
+    });
+  });
+
+  // Bind delete buttons
+  container.querySelectorAll('.btn-key-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.index, 10);
+      geminiKeys.splice(idx, 1);
+      setGeminiKeys(geminiKeys);
+      renderGeminiKeys();
+      showToast('Clave eliminada del pool', 'info', 2500);
+    });
+  });
+}
+
+function addKeyFromInput() {
+  const input = document.getElementById('cfg-new-gemini-key');
+  const val = (input?.value || '').trim();
+  const err = document.getElementById('cfg-error');
+
+  if (!val) {
+    showToast('Pega una clave antes de añadir', 'error', 3000);
+    input?.focus();
+    return;
+  }
+
+  if (geminiKeys.includes(val)) {
+    showToast('Esta clave ya está en la lista', 'error', 3000);
+    input.value = '';
+    return;
+  }
+
+  geminiKeys.push(val);
+  setGeminiKeys(geminiKeys);
+  input.value = '';
+  err.classList.add('hidden');
+  renderGeminiKeys();
+  showToast(`✅ Clave añadida (${geminiKeys.length} en total)`, 'success', 3000);
+}
+
+document.getElementById('btn-add-gemini-key').addEventListener('click', addKeyFromInput);
+document.getElementById('cfg-new-gemini-key').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addKeyFromInput();
+  }
+});
+
+// Initial render
+renderGeminiKeys();
 
 // ── Save config ────────────────────────────────────────────────────────────────
 document.getElementById('btn-save-config').addEventListener('click', () => {
   const url = document.getElementById('cfg-supabase-url').value.trim();
   const key = document.getElementById('cfg-supabase-key').value.trim();
-  const gem = document.getElementById('cfg-gemini-key').value.trim();
   const err = document.getElementById('cfg-error');
 
-  if (!url || !key || !gem) {
-    err.textContent = 'Todos los campos son obligatorios.';
+  if (!url || !key) {
+    err.textContent = 'Completa la URL y Anon Key de Supabase.';
     err.classList.remove('hidden');
     return;
   }
@@ -176,9 +294,15 @@ document.getElementById('btn-save-config').addEventListener('click', () => {
     err.classList.remove('hidden');
     return;
   }
+  if (geminiKeys.length === 0) {
+    err.textContent = 'Añade al menos una clave de Gemini en el pool.';
+    err.classList.remove('hidden');
+    return;
+  }
+
   err.classList.add('hidden');
-  setConfig({ supabaseUrl: url, supabaseKey: key, geminiKey: gem });
-  showToast('✅ Configuración guardada', 'success');
+  setConfig({ supabaseUrl: url, supabaseKey: key, geminiKeys: geminiKeys });
+  showToast('✅ Configuración guardada correctamente', 'success');
 });
 
 // ── Auth UI ────────────────────────────────────────────────────────────────────
