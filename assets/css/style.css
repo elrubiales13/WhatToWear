@@ -239,28 +239,51 @@ p  { line-height: 1.6; }
 
 /* ── Carousels ───────────────────────────────────────────────────────────────── */
 .carousel-section {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .carousel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 16px 10px;
+  padding: 14px 16px 8px;
 }
 
 .carousel-label {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
-.carousel-label .cat-icon { font-size: 1.2rem; }
-.carousel-label .cat-count { font-size: 0.8rem; font-weight: 400; color: var(--text-muted); }
+.carousel-label .cat-icon { font-size: 1.25rem; }
+.carousel-label .cat-count { font-size: 0.78rem; font-weight: 400; color: var(--text-muted); }
 
 .carousel-outer {
   position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Gradient fade on left and right edges for spotlight focus in center */
+.carousel-outer::before,
+.carousel-outer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+.carousel-outer::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg) 15%, transparent 100%);
+}
+.carousel-outer::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg) 15%, transparent 100%);
 }
 
 .carousel-btn {
@@ -268,71 +291,93 @@ p  { line-height: 1.6; }
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-  font-size: 1.1rem;
+  box-shadow: var(--shadow-md);
+  font-size: 1.2rem;
+  font-weight: 700;
   color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition);
 }
-.carousel-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
-.carousel-btn.prev { left: 4px; }
-.carousel-btn.next { right: 4px; }
+.carousel-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  transform: translateY(-50%) scale(1.1);
+}
+.carousel-btn.prev { left: 8px; }
+.carousel-btn.next { right: 8px; }
 .carousel-btn:disabled { opacity: 0; pointer-events: none; }
 
 .carousel-track {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 14px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  padding: 4px 16px 12px;
+  /* Centering: padding ensures any card can be centered in the viewport */
+  padding: 16px calc(50% - 65px);
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 .carousel-track::-webkit-scrollbar { display: none; }
 
-/* ── Clothing Cards ──────────────────────────────────────────────────────────── */
+/* ── Clothing Cards (Center Spotlight & Darkened Sides) ───────────────────────── */
 .clothing-card {
-  scroll-snap-align: start;
+  scroll-snap-align: center;
   flex-shrink: 0;
-  width: 110px;
+  width: 130px;
   background: var(--surface);
   border-radius: var(--r);
   border: 2.5px solid transparent;
   overflow: hidden;
   cursor: pointer;
-  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
-  box-shadow: var(--shadow-xs);
   user-select: none;
+  /* Non-selected elements: smaller and darkened / shadowed */
+  transform: scale(0.8);
+  opacity: 0.35;
+  filter: brightness(0.35) contrast(0.9);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity 0.28s ease,
+              filter 0.28s ease,
+              border-color 0.28s ease,
+              box-shadow 0.28s ease;
+  box-shadow: var(--shadow-xs);
 }
 
 .clothing-card:hover {
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-2px);
+  opacity: 0.65;
+  filter: brightness(0.65);
+  transform: scale(0.86);
 }
 
+/* Selected element: fixed in center, full size, illuminated */
 .clothing-card.selected {
+  transform: scale(1.08);
+  opacity: 1;
+  filter: brightness(1) contrast(1);
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-muted);
-  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 28px rgba(34, 197, 94, 0.28), 0 2px 8px rgba(0,0,0,.12);
+  z-index: 2;
 }
 
 .clothing-card .card-img {
-  width: 110px;
-  height: 110px;
+  width: 130px;
+  height: 130px;
   overflow: hidden;
   background: var(--surface-2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
+  font-size: 2.8rem;
+  position: relative;
 }
 .clothing-card .card-img img {
   width: 100%;
@@ -341,21 +386,44 @@ p  { line-height: 1.6; }
   object-position: center;
   transition: transform .3s ease;
 }
-.clothing-card:hover .card-img img { transform: scale(1.05); }
+.clothing-card.selected .card-img img {
+  transform: scale(1.02);
+}
 
 .clothing-card .card-label {
-  padding: 6px 8px;
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--text-muted);
+  padding: 8px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* "None / Sin capa" card for optional layers */
+.clothing-card.card-none {
+  border-style: dashed;
+  background: var(--surface-2);
+}
+.clothing-card.card-none .card-img {
+  font-size: 2.2rem;
+  color: var(--text-muted);
+}
+
+/* Dress covered placeholder card */
+.clothing-card.card-dress-covered {
+  background: var(--surface);
+  border-color: #EC4899;
+}
+.clothing-card.card-dress-covered.selected {
+  border-color: #EC4899;
+  box-shadow: 0 10px 28px rgba(236, 72, 153, 0.25);
+}
+
 /* Empty carousel */
 .carousel-empty {
-  min-width: 200px;
+  min-width: 220px;
   height: 130px;
   display: flex;
   align-items: center;
@@ -367,8 +435,112 @@ p  { line-height: 1.6; }
   text-align: center;
   padding: 16px;
   line-height: 1.5;
+  margin: 0 auto;
 }
-.carousel-empty a { color: var(--primary); }
+.carousel-empty a { color: var(--primary); font-weight: 600; }
+
+/* ── Torso Layers Controller ─────────────────────────────────────────────────── */
+.torso-layer-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.torso-layer-tabs::-webkit-scrollbar { display: none; }
+
+.torso-layer-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  box-shadow: var(--shadow-xs);
+}
+.torso-layer-tab:hover {
+  color: var(--text);
+  border-color: var(--primary);
+}
+.torso-layer-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);
+}
+.torso-layer-tab .tab-badge {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: inline-block;
+}
+.torso-layer-tab.active .tab-badge {
+  background: #fff;
+}
+.torso-layer-tab:not(.has-item) .tab-badge {
+  display: none;
+}
+
+/* Active torso layers summary row */
+.torso-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 16px 10px;
+  align-items: center;
+  justify-content: center;
+}
+.torso-layer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 14px;
+  background: var(--primary-muted);
+  color: var(--primary-dark);
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.torso-layer-chip:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.torso-layer-chip .chip-remove {
+  font-size: 0.9rem;
+  opacity: 0.75;
+  line-height: 1;
+  margin-left: 2px;
+  cursor: pointer;
+}
+.torso-layer-chip .chip-remove:hover {
+  opacity: 1;
+  color: var(--danger);
+}
+
+/* Dress note in Legs carousel */
+.legs-dress-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  color: #DB2777;
+  background: #FCE7F3;
+  padding: 3px 9px;
+  border-radius: 12px;
+  margin-left: 6px;
+  font-weight: 600;
+}
 
 /* ── Generate Section ────────────────────────────────────────────────────────── */
 .generate-section {
@@ -458,29 +630,35 @@ p  { line-height: 1.6; }
 /* ── Floating Heart Button ───────────────────────────────────────────────────── */
 .fab-heart {
   position: fixed;
-  bottom: calc(var(--nav-h) + 16px);
+  /* Raised comfortably above the chat input & send button */
+  bottom: calc(var(--nav-h) + 125px);
   right: 20px;
   z-index: 150;
-  width: 56px;
-  height: 56px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   color: var(--danger);
   font-size: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-lg);
-  border: 2px solid var(--danger-muted);
-  transition: all var(--transition);
+  box-shadow: 0 8px 24px rgba(0,0,0,.15), 0 0 0 3px var(--danger-muted);
+  border: 2px solid var(--danger);
+  transition: transform var(--transition), opacity var(--transition), box-shadow var(--transition);
   cursor: pointer;
 }
 .fab-heart:hover {
   background: var(--danger);
   color: #fff;
-  transform: scale(1.1);
+  transform: scale(1.12);
+  box-shadow: 0 10px 28px rgba(239, 68, 68, 0.45);
 }
-.fab-heart.hidden { transform: scale(0); opacity: 0; pointer-events: none; }
+.fab-heart.hidden {
+  transform: scale(0) translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+}
 
 /* ── FAB Add button ──────────────────────────────────────────────────────────── */
 .fab-add {
