@@ -3,8 +3,8 @@
 export const APP_DEFAULTS = {
   // Pre-configured Supabase project URL so new devices don't need to re-enter it
   supabaseUrl: 'https://kordaebgefnhvcuhdjff.supabase.co',
-  // Put your public Supabase Anon Key here to enable zero-config logins on any device
-  supabaseKey: '',
+  // Public anon key allows the app to connect before a user signs in
+  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvcmRhZWJnZWZuaHZjdWhkamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMzk5NDMsImV4cCI6MjEwODkxNTk0M30.IBhp7Ub_-54dlgSMXF99dgqz0ATdQEm2M6FtWmJrzGE',
 };
 
 export const KEYS = {
