@@ -322,6 +322,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById('btn-auth-submit').textContent = authMode === 'login' ? 'Entrar' : 'Registrarse';
     document.getElementById('auth-error').classList.add('hidden');
     document.getElementById('auth-password').autocomplete = authMode === 'login' ? 'current-password' : 'new-password';
+    // Show/hide API keys section based on selected tab (only for non-logged-in)
+    syncApiKeysSectionVisibility(false);
   });
 });
 
@@ -381,12 +383,15 @@ async function updateAccountUI() {
         geminiKeys = getGeminiKeys();
         renderGeminiKeys();
       }
+      syncApiKeysSectionVisibility(true);
     } else {
       loginSec.classList.remove('hidden');
       loggedSec.classList.add('hidden');
+      syncApiKeysSectionVisibility(false);
     }
   } catch {
     // Supabase not configured yet — skip
+    syncApiKeysSectionVisibility(false);
   }
 }
 
