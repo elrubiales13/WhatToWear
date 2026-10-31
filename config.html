@@ -171,7 +171,10 @@ import {
   getGeminiKeys, setGeminiKeys,
   getActiveGeminiIndex, setActiveGeminiIndex
 } from './assets/js/config.js';
-import { getCurrentUser, signIn, signUp, signOut } from './assets/js/supabase.js';
+import {
+  getCurrentUser, signIn, signUp, signOut,
+  syncConfigToCloud, syncConfigFromCloud
+} from './assets/js/supabase.js';
 import { showToast } from './assets/js/auth.js';
 
 // ── Local state for keys ───────────────────────────────────────────────────────
@@ -232,17 +235,18 @@ function renderGeminiKeys() {
 
   // Bind delete buttons
   container.querySelectorAll('.btn-key-delete').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const idx = parseInt(btn.dataset.index, 10);
       geminiKeys.splice(idx, 1);
       setGeminiKeys(geminiKeys);
+      await syncConfigToCloud(geminiKeys);
       renderGeminiKeys();
       showToast('Clave eliminada del pool', 'info', 2500);
     });
   });
 }
 
-function addKeyFromInput() {
+async function addKeyFromInput() {
   const input = document.getElementById('cfg-new-gemini-key');
   const val = (input?.value || '').trim();
   const err = document.getElementById('cfg-error');
@@ -261,10 +265,11 @@ function addKeyFromInput() {
 
   geminiKeys.push(val);
   setGeminiKeys(geminiKeys);
+  await syncConfigToCloud(geminiKeys);
   input.value = '';
   err.classList.add('hidden');
   renderGeminiKeys();
-  showToast(`✅ Clave añadida (${geminiKeys.length} en total)`, 'success', 3000);
+  showToast(`✅ Clave añadida y guardada en tu cuenta (${geminiKeys.length} en total)`, 'success', 3000);
 }
 
 document.getElementById('btn-add-gemini-key').addEventListener('click', addKeyFromInput);
@@ -279,7 +284,7 @@ document.getElementById('cfg-new-gemini-key').addEventListener('keydown', (e) =>
 renderGeminiKeys();
 
 // ── Save config ────────────────────────────────────────────────────────────────
-document.getElementById('btn-save-config').addEventListener('click', () => {
+document.getElementById('btn-save-config').addEventListener('click', async () => {
   const url = document.getElementById('cfg-supabase-url').value.trim();
   const key = document.getElementById('cfg-supabase-key').value.trim();
   const err = document.getElementById('cfg-error');
@@ -302,7 +307,8 @@ document.getElementById('btn-save-config').addEventListener('click', () => {
 
   err.classList.add('hidden');
   setConfig({ supabaseUrl: url, supabaseKey: key, geminiKeys: geminiKeys });
-  showToast('✅ Configuración guardada correctamente', 'success');
+  await syncConfigToCloud(geminiKeys);
+  showToast('✅ Configuración guardada y sincronizada en tu cuenta', 'success');
 });
 
 // ── Auth UI ────────────────────────────────────────────────────────────────────
@@ -338,10 +344,12 @@ document.getElementById('btn-auth-submit').addEventListener('click', async () =>
     if (authMode === 'login') {
       await signIn(email, password);
     } else {
-      await signUp(email, password);
+      await signUp(email, password, { gemini_keys: geminiKeys });
     }
     await updateAccountUI();
-    showToast('✅ Sesión iniciada', 'success');
+    geminiKeys = getGeminiKeys();
+    renderGeminiKeys();
+    showToast('✅ Sesión iniciada y configuración sincronizada', 'success');
   } catch (err) {
     errEl.textContent = err.message;
     errEl.classList.remove('hidden');
@@ -367,6 +375,12 @@ async function updateAccountUI() {
       loggedSec.classList.remove('hidden');
       document.getElementById('user-email').textContent = user.email;
       document.getElementById('user-avatar').textContent = user.email?.[0]?.toUpperCase() || '?';
+      // Sync cloud keys to view
+      const cloudKeys = await syncConfigFromCloud(user);
+      if (cloudKeys) {
+        geminiKeys = getGeminiKeys();
+        renderGeminiKeys();
+      }
     } else {
       loginSec.classList.remove('hidden');
       loggedSec.classList.add('hidden');
