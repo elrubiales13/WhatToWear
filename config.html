@@ -166,13 +166,13 @@
 
 <script type="module">
 import {
-  getConfig,
+  getConfig, setConfig,
   getGeminiKeys, setGeminiKeys,
   getActiveGeminiIndex, setActiveGeminiIndex
 } from './assets/js/config.js';
 import {
   getCurrentUser, signIn, signUp, signOut,
-  syncConfigToCloud, syncConfigFromCloud, setSupabaseConfig
+  syncConfigToCloud, syncConfigFromCloud
 } from './assets/js/supabase.js';
 import { showToast } from './assets/js/auth.js';
 
@@ -299,8 +299,7 @@ document.getElementById('btn-save-config').addEventListener('click', async () =>
     return;
   }
   err.classList.add('hidden');
-  setSupabaseConfig({ supabaseUrl: url, supabaseKey: key });
-  setGeminiKeys(geminiKeys);
+  setConfig({ supabaseUrl: url, supabaseKey: key, geminiKeys });
   if (await getCurrentUser().catch(() => null)) {
     await syncConfigToCloud(geminiKeys);
     showToast('✅ Configuración guardada y sincronizada en tu cuenta', 'success');
@@ -370,8 +369,7 @@ document.getElementById('btn-auth-submit').addEventListener('click', async () =>
         throw new Error('La URL de Supabase debe empezar por https://');
       }
 
-      setSupabaseConfig({ supabaseUrl, supabaseKey });
-      setGeminiKeys(geminiKeys);
+      setConfig({ supabaseUrl, supabaseKey, geminiKeys });
       await signUp(email, password, {
         gemini_keys: geminiKeys,
         app_config: { supabase_url: supabaseUrl, supabase_key: supabaseKey }
