@@ -23,8 +23,8 @@
   <!-- ── Main ──────────────────────────────────────────────────────────────── -->
   <main class="page-main" style="padding-top:20px;display:flex;flex-direction:column;gap:16px;">
 
-    <!-- ── API Keys section ──────────────────────────────────────────────────── -->
-    <section class="config-section">
+    <!-- ── API Keys section (solo visible en pestaña "Crear cuenta" o logueado) -->
+    <section class="config-section" id="api-keys-section">
       <p class="config-section-title">🔑 Claves de API</p>
 
       <p class="text-muted text-sm" style="margin-top:-4px;">
@@ -313,6 +313,24 @@ document.getElementById('btn-save-config').addEventListener('click', async () =>
 
 // ── Auth UI ────────────────────────────────────────────────────────────────────
 let authMode = 'login';
+
+// ── API Keys section visibility ────────────────────────────────────────────────
+/**
+ * Controls whether the "🔑 Claves de API" section is visible.
+ * Visible only when: the user is logged in (to manage keys)
+ * OR the "Crear cuenta" tab is active (so new users can enter their keys).
+ * Hidden during "Iniciar sesión" — login only needs email + password.
+ * @param {boolean} loggedIn - true when a user session is active
+ */
+function syncApiKeysSectionVisibility(loggedIn) {
+  const section = document.getElementById('api-keys-section');
+  if (!section) return;
+  const showForRegister = !loggedIn && authMode === 'register';
+  section.style.display = (loggedIn || showForRegister) ? '' : 'none';
+}
+
+// Hide API keys section immediately on load (login tab is active by default)
+syncApiKeysSectionVisibility(false);
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
