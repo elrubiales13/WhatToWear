@@ -1,14 +1,16 @@
 // ─── Supabase client + data helpers ───────────────────────────────────────────
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { getConfig, setGeminiKeys } from './config.js';
+import { getConfig, getGeminiKeys, setConfig, setGeminiKeys } from './config.js';
 
 let _sb = null;
+let _sbConfig = null;
 
 export function getSupabase() {
-  if (!_sb) {
-    const { supabaseUrl, supabaseKey } = getConfig();
-    if (!supabaseUrl || !supabaseKey) throw new Error('Supabase no configurado. Ve a Configuración.');
+  const { supabaseUrl, supabaseKey } = getConfig();
+  if (!supabaseUrl || !supabaseKey) throw new Error('Supabase no configurado. Ve a Configuración.');
+  if (!_sb || _sbConfig?.supabaseUrl !== supabaseUrl || _sbConfig?.supabaseKey !== supabaseKey) {
     _sb = createClient(supabaseUrl, supabaseKey);
+    _sbConfig = { supabaseUrl, supabaseKey };
   }
   return _sb;
 }
@@ -23,8 +25,22 @@ export async function getCurrentUser() {
 export async function signIn(email, password) {
   const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
   if (error) throw error;
-  // Automatically sync Gemini API keys stored in user's cloud account to local storage
-  await syncConfigFromCloud(data.user);
+  const authenticatedClient = _sb;
+  await syncAppConfigFromCloud(data.user);
+  if (_sb !== authenticatedClient && data.session) {
+    const { error: sessionError } = await getSupabase().auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+    if (sessionError) throw sessionError;
+  }
+  await syncAppConfigToCloud();
+  // Prefer account keys, but migrate keys left on this device if the account has none.
+  const cloudKeys = await syncConfigFromCloud(data.user);
+  if (!cloudKeys) {
+    const localKeys = getGeminiKeys();
+    if (localKeys.length > 0) await syncConfigToCloud(localKeys);
+  }
   return data.user;
 }
 
@@ -46,6 +62,43 @@ export async function signUp(email, password, metadata = {}) {
 export async function signOut() {
   _sb = null; // force re-init on next call
   await getSupabase().auth.signOut();
+}
+
+/** Saves the public Supabase connection details to account metadata once. */
+export async function syncAppConfigToCloud() {
+  try {
+    const user = await getCurrentUser();
+    if (!user || (user.user_metadata?.app_config?.supabase_url && user.user_metadata?.app_config?.supabase_key)) return;
+
+    const { supabaseUrl, supabaseKey } = getConfig();
+    if (!supabaseUrl || !supabaseKey) return;
+
+    const { error } = await getSupabase().auth.updateUser({
+      data: { app_config: { supabase_url: supabaseUrl, supabase_key: supabaseKey } }
+    });
+    if (error) console.warn('Cloud config sync error:', error.message);
+  } catch (err) {
+    console.warn('Cloud config sync failed:', err);
+  }
+}
+
+/** Restores saved connection details after authentication has succeeded. */
+export async function syncAppConfigFromCloud(currentUser = null) {
+  try {
+    const user = currentUser || await getCurrentUser();
+    const appConfig = user?.user_metadata?.app_config;
+    if (!appConfig?.supabase_url || !appConfig?.supabase_key) return false;
+
+    const current = getConfig();
+    if (current.supabaseUrl !== appConfig.supabase_url) return false;
+    if (current.supabaseKey !== appConfig.supabase_key) {
+      setConfig({ supabaseKey: appConfig.supabase_key });
+    }
+    return true;
+  } catch (err) {
+    console.warn('Cloud config restore failed:', err);
+    return false;
+  }
 }
 
 /**
