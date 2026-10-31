@@ -534,11 +534,9 @@ async function handleAiOutfit() {
   const prompt = textarea.value.trim();
   if (!prompt) { textarea.focus(); return; }
 
-  // Clear the input immediately so the user knows it was sent
-  textarea.value = '';
-
   const sendBtn = document.getElementById('btn-send');
   const explEl  = document.getElementById('ai-explanation');
+  textarea.disabled = true;
   sendBtn.disabled = true;
   sendBtn.innerHTML = '<span class="spinner"></span>';
   explEl.classList.add('hidden');
@@ -546,6 +544,7 @@ async function handleAiOutfit() {
   try {
     const result = await generateOutfitFromDescription(prompt, wardrobe);
     applyOutfit(result);
+    textarea.value = '';
     if (result.explanation) {
       explEl.textContent = `💬 ${result.explanation}`;
       explEl.classList.remove('hidden');
@@ -553,6 +552,7 @@ async function handleAiOutfit() {
   } catch (err) {
     showToast(err.message, 'error');
   } finally {
+    textarea.disabled = false;
     sendBtn.disabled = false;
     sendBtn.innerHTML = sendIconSVG();
   }

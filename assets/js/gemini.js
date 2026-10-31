@@ -3,6 +3,7 @@ import { getGeminiKeys, getActiveGeminiIndex, getActiveGeminiKey, rotateGeminiKe
 import { showToast } from './auth.js';
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
+const MAX_TRANSIENT_RETRIES = 3;
 
 /**
  * Checks if an HTTP response code or error object indicates rate limit or token exhaustion.
@@ -18,6 +19,50 @@ function isQuotaExhausted(status, errData) {
     msg.includes('rate limit') ||
     msg.includes('too many requests')
   );
+}
+
+function isTransientModelFailure(status, errData) {
+  if ([502, 503, 504].includes(status)) return true;
+  const message = (errData?.error?.message || errData?.message || '').toLowerCase();
+  const state = (errData?.error?.status || errData?.status || '').toLowerCase();
+  return (
+    ['unavailable', 'internal', 'deadline_exceeded'].some(value => state.includes(value)) ||
+    ['overloaded', 'temporarily unavailable', 'high demand', 'try again later'].some(value => message.includes(value))
+  );
+}
+
+function retryDelay(response, retry) {
+  const retryAfter = response?.headers?.get('Retry-After');
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+    const date = Date.parse(retryAfter);
+    if (!Number.isNaN(date)) return Math.max(0, date - Date.now());
+  }
+  return retry * 2000;
+}
+
+async function fetchWithTransientRetries(url, options) {
+  let retry = 0;
+
+  while (true) {
+    let response;
+    try {
+      response = await fetch(url, options);
+    } catch (err) {
+      if (!(err instanceof TypeError) || retry >= MAX_TRANSIENT_RETRIES) throw err;
+    }
+
+    if (response && (response.ok || !isTransientModelFailure(response.status, await response.clone().json().catch(() => ({}))))) {
+      return response;
+    }
+    if (retry >= MAX_TRANSIENT_RETRIES) return response;
+
+    retry += 1;
+    const delay = response ? retryDelay(response, retry) : retry * 2000;
+    showToast(`Gemini está ocupado. Reintentando en ${Math.ceil(delay / 1000)} s (${retry}/${MAX_TRANSIENT_RETRIES})…`, 'info', delay + 1000);
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
 }
 
 /**
@@ -102,7 +147,7 @@ async function callGemini(parts, temperature = 0.3) {
     const currentIdx = getActiveGeminiIndex();
 
     try {
-      const res = await fetch(`${BASE_URL}?key=${currentKey}`, {
+      const res = await fetchWithTransientRetries(`${BASE_URL}?key=${currentKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
