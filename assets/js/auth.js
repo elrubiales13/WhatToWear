@@ -1,5 +1,5 @@
 // ─── Auth guard + login modal ──────────────────────────────────────────────────
-import { getCurrentUser, signIn, signUp, signOut } from './supabase.js';
+import { getCurrentUser, signIn, signUp, signOut, syncConfigFromCloud } from './supabase.js';
 import { guardConfig } from './config.js';
 
 // ── Login modal HTML ──────────────────────────────────────────────────────────
@@ -10,7 +10,7 @@ function injectLoginModal() {
       <div class="auth-card">
         <img src="assets/img/wtw-logo.svg" alt="WTW" class="auth-logo">
         <h1 class="auth-title">What To Wear</h1>
-        <p class="auth-subtitle">Tu armario digital inteligente</p>
+        <p class="auth-subtitle" id="auth-modal-subtitle">Tu armario digital inteligente</p>
 
         <div class="tab-group">
           <button class="tab-btn active" data-tab="login">Iniciar sesión</button>
@@ -19,13 +19,27 @@ function injectLoginModal() {
 
         <form id="auth-form" novalidate>
           <div class="form-field">
+            <label for="auth-email" style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">Email</label>
             <input id="auth-email" type="email" placeholder="correo@ejemplo.com" autocomplete="email" required>
           </div>
           <div class="form-field">
-            <input id="auth-password" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+            <label for="auth-password" style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">Contraseña</label>
+            <input id="auth-password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="current-password" required>
           </div>
+
+          <!-- Shown only when registering a new account -->
+          <div id="auth-register-extra" class="form-field hidden" style="margin-top:2px;">
+            <label for="auth-gemini-key" style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">
+              Clave de API Gemini (se guardará en tu cuenta)
+            </label>
+            <input id="auth-gemini-key" type="password" placeholder="AIzaSy… (opcional, o añadir después)" autocomplete="off">
+            <p style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;line-height:1.4;">
+              ✨ Se asociará a tu cuenta para que no tengas que volver a configurarla en otros dispositivos.
+            </p>
+          </div>
+
           <p id="auth-error" class="form-error hidden"></p>
-          <button type="submit" id="auth-submit" class="btn btn-primary btn-block">
+          <button type="submit" id="auth-submit" class="btn btn-primary btn-block" style="margin-top:6px;">
             Entrar
           </button>
         </form>
@@ -39,9 +53,11 @@ function showLoginModal(onSuccess) {
   overlay.classList.remove('hidden');
 
   let mode = 'login';
-  const form    = document.getElementById('auth-form');
-  const errEl   = document.getElementById('auth-error');
-  const submitBtn = document.getElementById('auth-submit');
+  const form        = document.getElementById('auth-form');
+  const errEl       = document.getElementById('auth-error');
+  const submitBtn   = document.getElementById('auth-submit');
+  const regExtra    = document.getElementById('auth-register-extra');
+  const subtitleEl  = document.getElementById('auth-modal-subtitle');
 
   // Tab switcher
   overlay.querySelectorAll('.tab-btn').forEach(btn => {
@@ -49,10 +65,19 @@ function showLoginModal(onSuccess) {
       overlay.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       mode = btn.dataset.tab;
-      submitBtn.textContent = mode === 'login' ? 'Entrar' : 'Registrarse';
+
+      if (mode === 'login') {
+        submitBtn.textContent = 'Entrar';
+        regExtra?.classList.add('hidden');
+        if (subtitleEl) subtitleEl.textContent = 'Accede a tu armario desde cualquier dispositivo';
+        document.getElementById('auth-password').autocomplete = 'current-password';
+      } else {
+        submitBtn.textContent = 'Crear cuenta y comenzar';
+        regExtra?.classList.remove('hidden');
+        if (subtitleEl) subtitleEl.textContent = 'Crea tu cuenta para guardar tu armario y claves';
+        document.getElementById('auth-password').autocomplete = 'new-password';
+      }
       errEl.classList.add('hidden');
-      document.getElementById('auth-password').autocomplete =
-        mode === 'login' ? 'current-password' : 'new-password';
     });
   });
 
@@ -61,6 +86,13 @@ function showLoginModal(onSuccess) {
     errEl.classList.add('hidden');
     const email    = document.getElementById('auth-email').value.trim();
     const password = document.getElementById('auth-password').value;
+
+    if (!email || !password) {
+      errEl.textContent = 'Introduce tu email y contraseña.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = '…';
 
@@ -68,7 +100,9 @@ function showLoginModal(onSuccess) {
       if (mode === 'login') {
         await signIn(email, password);
       } else {
-        await signUp(email, password);
+        const geminiInput = document.getElementById('auth-gemini-key')?.value.trim();
+        const metadata = geminiInput ? { gemini_keys: [geminiInput] } : {};
+        await signUp(email, password, metadata);
       }
       overlay.classList.add('hidden');
       onSuccess();
@@ -77,7 +111,7 @@ function showLoginModal(onSuccess) {
       errEl.classList.remove('hidden');
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = mode === 'login' ? 'Entrar' : 'Registrarse';
+      submitBtn.textContent = mode === 'login' ? 'Entrar' : 'Crear cuenta y comenzar';
     }
   });
 }
@@ -98,15 +132,23 @@ export async function requireAuth() {
   injectLoginModal();
 
   return new Promise(async (resolve) => {
-    const user = await getCurrentUser();
-    if (user) {
-      resolve(user);
-    } else {
-      showLoginModal(async () => {
-        const freshUser = await getCurrentUser();
-        resolve(freshUser);
-      });
-    }
+    try {
+      const user = await getCurrentUser();
+      if (user) {
+        // Automatically sync any Gemini keys saved in user's cloud account
+        await syncConfigFromCloud(user);
+        resolve(user);
+        return;
+      }
+    } catch {}
+
+    showLoginModal(async () => {
+      const freshUser = await getCurrentUser();
+      if (freshUser) {
+        await syncConfigFromCloud(freshUser);
+      }
+      resolve(freshUser);
+    });
   });
 }
 

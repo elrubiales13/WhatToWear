@@ -1,6 +1,6 @@
 // ─── Supabase client + data helpers ───────────────────────────────────────────
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { getConfig } from './config.js';
+import { getConfig, setGeminiKeys } from './config.js';
 
 let _sb = null;
 
@@ -23,18 +23,62 @@ export async function getCurrentUser() {
 export async function signIn(email, password) {
   const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
   if (error) throw error;
+  // Automatically sync Gemini API keys stored in user's cloud account to local storage
+  await syncConfigFromCloud(data.user);
   return data.user;
 }
 
-export async function signUp(email, password) {
-  const { data, error } = await getSupabase().auth.signUp({ email, password });
+export async function signUp(email, password, metadata = {}) {
+  const { data, error } = await getSupabase().auth.signUp({
+    email,
+    password,
+    options: {
+      data: metadata
+    }
+  });
   if (error) throw error;
+  if (metadata.gemini_keys) {
+    setGeminiKeys(metadata.gemini_keys);
+  }
   return data.user;
 }
 
 export async function signOut() {
   _sb = null; // force re-init on next call
   await getSupabase().auth.signOut();
+}
+
+/**
+ * Saves the user's Gemini keys to their Supabase account metadata
+ * so they persist across any device.
+ */
+export async function syncConfigToCloud(geminiKeys) {
+  try {
+    const cleanKeys = Array.isArray(geminiKeys) ? geminiKeys : [geminiKeys].filter(Boolean);
+    const { error } = await getSupabase().auth.updateUser({
+      data: { gemini_keys: cleanKeys }
+    });
+    if (error) console.warn('Cloud sync error:', error.message);
+  } catch (err) {
+    console.warn('Sync failed:', err);
+  }
+}
+
+/**
+ * Downloads Gemini keys from the user's Supabase account metadata to localStorage.
+ */
+export async function syncConfigFromCloud(currentUser = null) {
+  try {
+    const user = currentUser || await getCurrentUser();
+    const cloudKeys = user?.user_metadata?.gemini_keys;
+    if (Array.isArray(cloudKeys) && cloudKeys.length > 0) {
+      setGeminiKeys(cloudKeys);
+      return cloudKeys;
+    }
+  } catch (err) {
+    console.warn('Sync from cloud failed:', err);
+  }
+  return null;
 }
 
 export function onAuthChange(callback) {

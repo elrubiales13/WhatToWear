@@ -1,4 +1,11 @@
-// ─── App Configuration (stored in localStorage) ───────────────────────────────
+// ─── App Configuration (stored in localStorage & synced with Supabase) ─────────
+
+export const APP_DEFAULTS = {
+  // Pre-configured Supabase project URL so new devices don't need to re-enter it
+  supabaseUrl: 'https://kordaebgefnhvcuhdjff.supabase.co',
+  // Put your public Supabase Anon Key here to enable zero-config logins on any device
+  supabaseKey: '',
+};
 
 export const KEYS = {
   SUPABASE_URL:        'wtw_supabase_url',
@@ -86,11 +93,14 @@ export function rotateGeminiKey() {
   };
 }
 
-/** Returns current config from localStorage */
+/** Returns current config from localStorage or defaults */
 export function getConfig() {
+  const localUrl = localStorage.getItem(KEYS.SUPABASE_URL);
+  const localKey = localStorage.getItem(KEYS.SUPABASE_KEY);
+
   return {
-    supabaseUrl: localStorage.getItem(KEYS.SUPABASE_URL) || '',
-    supabaseKey: localStorage.getItem(KEYS.SUPABASE_KEY) || '',
+    supabaseUrl: localUrl || APP_DEFAULTS.supabaseUrl,
+    supabaseKey: localKey || APP_DEFAULTS.supabaseKey,
     geminiKey:   getActiveGeminiKey(),
     geminiKeys:  getGeminiKeys(),
   };
@@ -107,13 +117,13 @@ export function setConfig({ supabaseUrl, supabaseKey, geminiKey, geminiKeys } = 
   }
 }
 
-/** True only when Supabase and at least one Gemini key are present */
+/** True when Supabase endpoint is available (from defaults or localStorage) */
 export function isConfigured() {
   const c = getConfig();
-  return Boolean(c.supabaseUrl && c.supabaseKey && c.geminiKey);
+  return Boolean(c.supabaseUrl && c.supabaseKey);
 }
 
-/** Redirect to config page if app is not configured */
+/** Redirect to config page ONLY if Supabase connection details are missing */
 export function guardConfig() {
   const onConfigPage = window.location.pathname.endsWith('config.html');
   if (!isConfigured() && !onConfigPage) {
