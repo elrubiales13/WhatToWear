@@ -24,12 +24,11 @@
   <main class="page-main" style="padding-top:20px;display:flex;flex-direction:column;gap:16px;">
 
     <!-- ── API Keys section (solo visible en pestaña "Crear cuenta" o logueado) -->
-    <section class="config-section" id="api-keys-section">
+    <section class="config-section hidden" id="api-keys-section">
       <p class="config-section-title">🔑 Claves de API</p>
 
       <p class="text-muted text-sm" style="margin-top:-4px;">
-        Tus claves se guardan <strong>solo en este dispositivo</strong> (localStorage)
-        y nunca se envían a ningún servidor intermedio.
+        La URL y la clave pública de Supabase se guardan en tu cuenta al registrarte. Las claves Gemini también se sincronizan con tu cuenta.
       </p>
 
       <div class="form-field">
@@ -167,13 +166,13 @@
 
 <script type="module">
 import {
-  getConfig, setConfig,
+  getConfig,
   getGeminiKeys, setGeminiKeys,
   getActiveGeminiIndex, setActiveGeminiIndex
 } from './assets/js/config.js';
 import {
   getCurrentUser, signIn, signUp, signOut,
-  syncConfigToCloud, syncConfigFromCloud
+  syncConfigToCloud, syncConfigFromCloud, setSupabaseConfig
 } from './assets/js/supabase.js';
 import { showToast } from './assets/js/auth.js';
 
@@ -299,16 +298,16 @@ document.getElementById('btn-save-config').addEventListener('click', async () =>
     err.classList.remove('hidden');
     return;
   }
-  if (geminiKeys.length === 0) {
-    err.textContent = 'Añade al menos una clave de Gemini en el pool.';
-    err.classList.remove('hidden');
-    return;
-  }
-
   err.classList.add('hidden');
-  setConfig({ supabaseUrl: url, supabaseKey: key, geminiKeys: geminiKeys });
-  await syncConfigToCloud(geminiKeys);
-  showToast('✅ Configuración guardada y sincronizada en tu cuenta', 'success');
+  setSupabaseConfig({ supabaseUrl: url, supabaseKey: key });
+  setGeminiKeys(geminiKeys);
+  if (await getCurrentUser().catch(() => null)) {
+    await syncConfigToCloud(geminiKeys);
+    showToast('✅ Configuración guardada y sincronizada en tu cuenta', 'success');
+  } else {
+    showToast('✅ Configuración de Supabase guardada en este dispositivo', 'success');
+    syncApiKeysSectionVisibility(false);
+  }
 });
 
 // ── Auth UI ────────────────────────────────────────────────────────────────────
@@ -317,16 +316,14 @@ let authMode = 'login';
 // ── API Keys section visibility ────────────────────────────────────────────────
 /**
  * Controls whether the "🔑 Claves de API" section is visible.
- * Visible only when: the user is logged in (to manage keys)
- * OR the "Crear cuenta" tab is active (so new users can enter their keys).
- * Hidden during "Iniciar sesión" — login only needs email + password.
+ * Visible only when the user is logged in or creating an account.
  * @param {boolean} loggedIn - true when a user session is active
  */
 function syncApiKeysSectionVisibility(loggedIn) {
   const section = document.getElementById('api-keys-section');
   if (!section) return;
   const showForRegister = !loggedIn && authMode === 'register';
-  section.style.display = (loggedIn || showForRegister) ? '' : 'none';
+  section.classList.toggle('hidden', !(loggedIn || showForRegister));
 }
 
 // Hide API keys section immediately on load (login tab is active by default)
@@ -364,7 +361,21 @@ document.getElementById('btn-auth-submit').addEventListener('click', async () =>
     if (authMode === 'login') {
       await signIn(email, password);
     } else {
-      await signUp(email, password, { gemini_keys: geminiKeys });
+      const supabaseUrl = document.getElementById('cfg-supabase-url').value.trim();
+      const supabaseKey = document.getElementById('cfg-supabase-key').value.trim();
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Introduce la URL y la clave anon de Supabase para crear la cuenta.');
+      }
+      if (!supabaseUrl.startsWith('https://')) {
+        throw new Error('La URL de Supabase debe empezar por https://');
+      }
+
+      setSupabaseConfig({ supabaseUrl, supabaseKey });
+      setGeminiKeys(geminiKeys);
+      await signUp(email, password, {
+        gemini_keys: geminiKeys,
+        app_config: { supabase_url: supabaseUrl, supabase_key: supabaseKey }
+      });
     }
     await updateAccountUI();
     geminiKeys = getGeminiKeys();
@@ -391,6 +402,7 @@ async function updateAccountUI() {
     const loginSec  = document.getElementById('login-section');
     const loggedSec = document.getElementById('logged-in-section');
     if (user) {
+      document.body.classList.add('authenticated');
       loginSec.classList.add('hidden');
       loggedSec.classList.remove('hidden');
       document.getElementById('user-email').textContent = user.email;
@@ -403,12 +415,14 @@ async function updateAccountUI() {
       }
       syncApiKeysSectionVisibility(true);
     } else {
+      document.body.classList.remove('authenticated');
       loginSec.classList.remove('hidden');
       loggedSec.classList.add('hidden');
       syncApiKeysSectionVisibility(false);
     }
   } catch {
     // Supabase not configured yet — skip
+    document.body.classList.remove('authenticated');
     syncApiKeysSectionVisibility(false);
   }
 }
