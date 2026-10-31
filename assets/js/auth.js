@@ -1,6 +1,6 @@
 // ─── Auth guard + login modal ──────────────────────────────────────────────────
 import { getCurrentUser, signIn, signUp, signOut, syncConfigFromCloud } from './supabase.js';
-import { guardConfig } from './config.js';
+import { guardConfig, getConfig, setConfig } from './config.js';
 
 // ── Login modal HTML ──────────────────────────────────────────────────────────
 function injectLoginModal() {
@@ -29,13 +29,19 @@ function injectLoginModal() {
 
           <!-- Shown only when registering a new account -->
           <div id="auth-register-extra" class="form-field hidden" style="margin-top:2px;">
-            <label for="auth-gemini-key" style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">
-              Clave de API Gemini (se guardará en tu cuenta)
-            </label>
-            <input id="auth-gemini-key" type="password" placeholder="AIzaSy… (opcional, o añadir después)" autocomplete="off">
-            <p style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;line-height:1.4;">
-              ✨ Se asociará a tu cuenta para que no tengas que volver a configurarla en otros dispositivos.
-            </p>
+            <div style="background:var(--surface-2,#1e293b);border-radius:10px;padding:12px;margin-bottom:10px;">
+              <p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">🔑 Configuración de la app</p>
+              <div class="form-field" id="auth-supabase-key-field">
+                <label for="auth-supabase-key" style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">Supabase Anon Key</label>
+                <input id="auth-supabase-key" type="password" placeholder="eyJhbGciOiJIUzI1NiIs…" autocomplete="off">
+                <p style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;line-height:1.4;">Clave pública del proyecto Supabase. Solo se pide una vez.</p>
+              </div>
+              <div class="form-field">
+                <label for="auth-gemini-key" style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">✨ Clave de API Gemini</label>
+                <input id="auth-gemini-key" type="password" placeholder="AIzaSy… (opcional, o añadir después)" autocomplete="off">
+                <p style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;line-height:1.4;">Se asociará a tu cuenta. No tendrás que configurarla de nuevo en otros dispositivos.</p>
+              </div>
+            </div>
           </div>
 
           <p id="auth-error" class="form-error hidden"></p>
@@ -52,12 +58,23 @@ function showLoginModal(onSuccess) {
   const overlay = document.getElementById('auth-overlay');
   overlay.classList.remove('hidden');
 
+  // Hide the bottom navigation while auth overlay is visible
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) bottomNav.style.display = 'none';
+
   let mode = 'login';
   const form        = document.getElementById('auth-form');
   const errEl       = document.getElementById('auth-error');
   const submitBtn   = document.getElementById('auth-submit');
   const regExtra    = document.getElementById('auth-register-extra');
   const subtitleEl  = document.getElementById('auth-modal-subtitle');
+
+  // Hide supabase key field if already configured
+  const currentCfg = getConfig();
+  const supabaseKeyField = document.getElementById('auth-supabase-key-field');
+  if (supabaseKeyField && currentCfg.supabaseKey) {
+    supabaseKeyField.style.display = 'none';
+  }
 
   // Tab switcher
   overlay.querySelectorAll('.tab-btn').forEach(btn => {
@@ -100,11 +117,18 @@ function showLoginModal(onSuccess) {
       if (mode === 'login') {
         await signIn(email, password);
       } else {
+        // Save supabase key if provided during registration
+        const supabaseKeyInput = document.getElementById('auth-supabase-key')?.value.trim();
+        if (supabaseKeyInput) {
+          setConfig({ supabaseKey: supabaseKeyInput });
+        }
         const geminiInput = document.getElementById('auth-gemini-key')?.value.trim();
         const metadata = geminiInput ? { gemini_keys: [geminiInput] } : {};
         await signUp(email, password, metadata);
       }
       overlay.classList.add('hidden');
+      // Restore bottom navigation after successful login
+      if (bottomNav) bottomNav.style.display = '';
       onSuccess();
     } catch (err) {
       errEl.textContent = translateAuthError(err.message);

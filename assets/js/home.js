@@ -534,6 +534,9 @@ async function handleAiOutfit() {
   const prompt = textarea.value.trim();
   if (!prompt) { textarea.focus(); return; }
 
+  // Clear the input immediately so the user knows it was sent
+  textarea.value = '';
+
   const sendBtn = document.getElementById('btn-send');
   const explEl  = document.getElementById('ai-explanation');
   sendBtn.disabled = true;
