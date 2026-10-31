@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22C55E"/>
+      <stop offset="100%" stop-color="#15803D"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="120" height="120" rx="26" fill="url(#bgGrad)" filter="url(#shadow)"/>
+
+  <!-- Wardrobe body -->
+  <rect x="18" y="22" width="84" height="76" rx="5" fill="white" opacity="0.92"/>
+
+  <!-- Top bar (cornice) -->
+  <rect x="14" y="18" width="92" height="10" rx="3" fill="white" opacity="0.7"/>
+
+  <!-- Center vertical divider -->
+  <line x1="60" y1="22" x2="60" y2="98" stroke="#E5E7EB" stroke-width="2"/>
+
+  <!-- Left door handle -->
+  <circle cx="53" cy="62" r="4" fill="#22C55E"/>
+  <circle cx="53" cy="62" r="2.5" fill="#15803D"/>
+
+  <!-- Right door handle -->
+  <circle cx="67" cy="62" r="4" fill="#22C55E"/>
+  <circle cx="67" cy="62" r="2.5" fill="#15803D"/>
+
+  <!-- WTW text on doors -->
+  <text x="60" y="46" font-family="'Inter', Arial, sans-serif" font-size="13" font-weight="800"
+        fill="#22C55E" text-anchor="middle" letter-spacing="0.5">WTW</text>
+
+  <!-- Hanger icon -->
+  <path d="M60 52 Q60 48 64 48 Q68 48 68 52 L71 55 L49 55 Z"
+        fill="none" stroke="#D1D5DB" stroke-width="1.5" stroke-linejoin="round"/>
+  <line x1="60" y1="78" x2="60" y2="84" stroke="#D1D5DB" stroke-width="1.5"/>
+  <line x1="53" y1="84" x2="67" y2="84" stroke="#D1D5DB" stroke-width="1.5"/>
+
+  <!-- Feet / base -->
+  <rect x="26" y="96" width="14" height="8" rx="2" fill="white" opacity="0.5"/>
+  <rect x="80" y="96" width="14" height="8" rx="2" fill="white" opacity="0.5"/>
+</svg>
